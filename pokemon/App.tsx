@@ -5,6 +5,12 @@ import { Pokemon, STARTERS } from './types/pokemon';
 import { PokeBall } from './components/PokeBall';
 import { PokemonCard } from './components/PokemonCard';
 import { Pokedex } from './screens/Pokedex';
+import { Settings } from './components/Settings';
+import { StarterSelection } from './components/StarterSelection';
+import { SplashScreen } from './screens/SplashScreen';
+import { musicService } from './services/musicService';
+import { soundEffectService } from './services/soundEffectService';
+
 
 const STORAGE_KEY = '@starter_pokemon';
 
@@ -12,9 +18,15 @@ export default function App() {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [starterPokemon, setStarterPokemon] = useState<Pokemon | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     checkStarterPokemon();
+    soundEffectService.loadSounds();
+    return () => {
+      soundEffectService.unloadSounds();
+    };
   }, []);
 
   const checkStarterPokemon = async () => {
@@ -47,26 +59,58 @@ export default function App() {
     }
   };
 
+  const handleResetStarter = async () => {
+    try {
+      // Reset all storage and states
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      setStarterPokemon(null);
+      setSelectedPokemon(null);
+      setShowSettings(false);
+      setShowSplash(true);
+      
+      // Reset all services to default
+      musicService.stopBackgroundMusic();
+      musicService.setVolume(0.1);
+      soundEffectService.setVolume(1.0);
+      
+    } catch (error) {
+      console.error('Error resetting starter pokemon:', error);
+    }
+  };
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    musicService.playBackgroundMusic();
+  };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
   if (isLoading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   if (starterPokemon) {
-    return <Pokedex starterPokemon={starterPokemon} />;
+    return (
+      <>
+        <Pokedex 
+          starterPokemon={starterPokemon} 
+          onOpenSettings={() => setShowSettings(true)}
+        />
+        <Settings
+          visible={showSettings}
+          onClose={() => setShowSettings(false)}
+          onResetStarter={handleResetStarter}
+        />
+      </>
+    );
   }
 
   return (
     <View style={styles.container}>
       {!selectedPokemon ? (
-        <View style={styles.starterContainer}>
-          {STARTERS.map((pokemon) => (
-            <PokeBall
-              key={pokemon.id}
-              pokemon={pokemon}
-              onSelect={handleSelectPokemon}
-            />
-          ))}
-        </View>
+        <StarterSelection onSelect={handleSelectPokemon} />
       ) : (
         <PokemonCard 
           pokemon={selectedPokemon}

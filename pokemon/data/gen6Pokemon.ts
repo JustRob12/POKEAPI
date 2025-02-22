@@ -163,5 +163,127 @@ export const GEN6_POKEMON: Pokemon[] = [
   {
     id: 706, name: 'Goodra', type: 'Dragon',
     stats: { hp: 90, attack: 100, defense: 70 }
+  },
+  // Additional Gen 6 Pokemon
+  {
+    id: 686, name: 'Inkay', type: 'Dark/Psychic',
+    stats: { hp: 53, attack: 54, defense: 53 }
+  },
+  {
+    id: 687, name: 'Malamar', type: 'Dark/Psychic',
+    stats: { hp: 86, attack: 92, defense: 88 }
+  },
+  {
+    id: 688, name: 'Binacle', type: 'Rock/Water',
+    stats: { hp: 42, attack: 52, defense: 67 }
+  },
+  {
+    id: 689, name: 'Barbaracle', type: 'Rock/Water',
+    stats: { hp: 72, attack: 105, defense: 115 }
+  },
+  {
+    id: 690, name: 'Skrelp', type: 'Poison/Water',
+    stats: { hp: 50, attack: 60, defense: 60 }
+  },
+  {
+    id: 691, name: 'Dragalge', type: 'Poison/Dragon',
+    stats: { hp: 65, attack: 75, defense: 90 }
+  },
+  {
+    id: 692, name: 'Clauncher', type: 'Water',
+    stats: { hp: 50, attack: 53, defense: 62 }
+  },
+  {
+    id: 693, name: 'Clawitzer', type: 'Water',
+    stats: { hp: 71, attack: 73, defense: 88 }
+  },
+  {
+    id: 694, name: 'Helioptile', type: 'Electric/Normal',
+    stats: { hp: 44, attack: 38, defense: 33 }
+  },
+  {
+    id: 695, name: 'Heliolisk', type: 'Electric/Normal',
+    stats: { hp: 62, attack: 55, defense: 52 }
+  },
+  {
+    id: 696, name: 'Tyrunt', type: 'Rock/Dragon',
+    stats: { hp: 58, attack: 89, defense: 77 }
+  },
+  {
+    id: 697, name: 'Tyrantrum', type: 'Rock/Dragon',
+    stats: { hp: 82, attack: 121, defense: 119 }
+  },
+  {
+    id: 698, name: 'Amaura', type: 'Rock/Ice',
+    stats: { hp: 77, attack: 59, defense: 50 }
+  },
+  {
+    id: 699, name: 'Aurorus', type: 'Rock/Ice',
+    stats: { hp: 123, attack: 77, defense: 72 }
+  },
+  {
+    id: 700, name: 'Sylveon', type: 'Fairy',
+    stats: { hp: 95, attack: 65, defense: 65 }
+  },
+  {
+    id: 707, name: 'Klefki', type: 'Steel/Fairy',
+    stats: { hp: 57, attack: 80, defense: 91 }
+  },
+  {
+    id: 708, name: 'Phantump', type: 'Ghost/Grass',
+    stats: { hp: 43, attack: 70, defense: 48 }
+  },
+  {
+    id: 709, name: 'Trevenant', type: 'Ghost/Grass',
+    stats: { hp: 85, attack: 110, defense: 76 }
+  },
+  {
+    id: 710, name: 'Pumpkaboo', type: 'Ghost/Grass',
+    stats: { hp: 49, attack: 66, defense: 70 }
+  },
+  {
+    id: 711, name: 'Gourgeist', type: 'Ghost/Grass',
+    stats: { hp: 65, attack: 90, defense: 122 }
+  },
+  {
+    id: 712, name: 'Bergmite', type: 'Ice',
+    stats: { hp: 55, attack: 69, defense: 85 }
+  },
+  {
+    id: 713, name: 'Avalugg', type: 'Ice',
+    stats: { hp: 95, attack: 117, defense: 184 }
+  },
+  {
+    id: 714, name: 'Noibat', type: 'Flying/Dragon',
+    stats: { hp: 40, attack: 30, defense: 35 }
+  },
+  {
+    id: 715, name: 'Noivern', type: 'Flying/Dragon',
+    stats: { hp: 85, attack: 70, defense: 80 }
+  },
+  // Legendary Pokemon
+  {
+    id: 716, name: 'Xerneas', type: 'Fairy',
+    stats: { hp: 126, attack: 131, defense: 95 }
+  },
+  {
+    id: 717, name: 'Yveltal', type: 'Dark/Flying',
+    stats: { hp: 126, attack: 131, defense: 95 }
+  },
+  {
+    id: 718, name: 'Zygarde', type: 'Dragon/Ground',
+    stats: { hp: 108, attack: 100, defense: 121 }
+  },
+  {
+    id: 679, name: 'Honedge', type: 'Steel/Ghost',
+    stats: { hp: 45, attack: 80, defense: 100 }
+  },
+  {
+    id: 680, name: 'Doublade', type: 'Steel/Ghost',
+    stats: { hp: 59, attack: 110, defense: 150 }
+  },
+  {
+    id: 681, name: 'Aegislash', type: 'Steel/Ghost',
+    stats: { hp: 60, attack: 150, defense: 150 }
   }
 ]; 

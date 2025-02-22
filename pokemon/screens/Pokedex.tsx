@@ -11,19 +11,41 @@ import {
   Animated
 } from 'react-native';
 import { Pokemon } from '../types/pokemon';
+import { GEN1_POKEMON } from '../data/gen1Pokemon';
+import { GEN2_POKEMON } from '../data/gen2Pokemon';
+import { GEN3_POKEMON } from '../data/gen3Pokemon';
+import { GEN4_POKEMON } from '../data/gen4Pokemon';
+import { GEN5_POKEMON } from '../data/gen5Pokemon';
 import { GEN6_POKEMON } from '../data/gen6Pokemon';
 import { POKEMON_DESCRIPTIONS } from '../data/pokemonDescriptions';
 import { pokemonVoiceService } from '../services/voiceService';
+import { soundEffectService } from '../services/soundEffectService';
 
 interface PokedexProps {
   starterPokemon: Pokemon;
+  onOpenSettings: () => void;
 }
 
-export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
+// Add this type for the generation data
+type GenerationKey = "Kanto" | "Johto" | "Hoenn" | "Sinnoh" | "Unova" | "Kalos";
+
+export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon, onOpenSettings }) => {
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [selectedGeneration, setSelectedGeneration] = useState<GenerationKey>("Kanto");
   const hpWidth = useRef(new Animated.Value(0)).current;
   const attackWidth = useRef(new Animated.Value(0)).current;
   const defenseWidth = useRef(new Animated.Value(0)).current;
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // Show 3 Pokémon per row, 2 rows
+
+  const generationData: Record<GenerationKey, Pokemon[]> = {
+    "Kanto": GEN1_POKEMON,
+    "Johto": GEN2_POKEMON,
+    "Hoenn": GEN3_POKEMON,
+    "Sinnoh": GEN4_POKEMON,
+    "Unova": GEN5_POKEMON,
+    "Kalos": GEN6_POKEMON,
+  };
 
   useEffect(() => {
     if (selectedPokemon) {
@@ -51,24 +73,28 @@ export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
         }),
       ]).start();
 
-      // Play the Pokédex description
+      // Play the Pokédex description with name
       const description = POKEMON_DESCRIPTIONS[selectedPokemon.id];
       if (description) {
-        pokemonVoiceService.speak(description);
+        const pokedexText = `${selectedPokemon.name}. ${description}`;
+        pokemonVoiceService.speak(pokedexText);
       }
     }
     return () => {
-      // Cleanup: stop any ongoing speech when component unmounts
       pokemonVoiceService.stop();
     };
   }, [selectedPokemon]);
 
-  const handlePokemonPress = (pokemon: Pokemon) => {
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedGeneration]);
+
+  const handlePokemonPress = async (pokemon: Pokemon) => {
+    await soundEffectService.playSound('buttonClick');
     setSelectedPokemon(pokemon);
   };
 
   const handleCloseModal = () => {
-    pokemonVoiceService.stop();
     setSelectedPokemon(null);
   };
 
@@ -85,19 +111,114 @@ export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
     }
   };
 
+  // First, create a helper function to split Pokemon into rows
+  const splitIntoRows = (pokemon: Pokemon[], rowCount: number) => {
+    const result: Pokemon[][] = [];
+    const itemsPerRow = 3; // Fixed to 3 columns
+    
+    for (let i = 0; i < rowCount; i++) {
+      result.push(pokemon.slice(i * itemsPerRow, (i + 1) * itemsPerRow));
+    }
+    
+    return result;
+  };
+
+  // Add pagination helper functions
+  const getCurrentPagePokemon = (pokemonList: Pokemon[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return pokemonList.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  const getTotalPages = (pokemonList: Pokemon[]) => {
+    return Math.ceil(pokemonList.length / itemsPerPage);
+  };
+
+  const renderGeneration = (pokemon: Pokemon[], genName: string) => {
+    const totalPages = getTotalPages(pokemon);
+    const currentPokemon = getCurrentPagePokemon(pokemon);
+
+    return (
+      <View style={styles.generationSection}>
+        <Text style={styles.sectionTitle}>{genName}</Text>
+        <View style={styles.allRowsContainer}>
+          {splitIntoRows(currentPokemon, 2).map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.rowContainer}>
+              {row.map((pokemon) => (
+                <TouchableOpacity
+                  key={pokemon.id}
+                  style={styles.gridItem}
+                  onPress={() => handlePokemonPress(pokemon)}
+                >
+                  <Image
+                    source={{
+                      uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${pokemon.id}.png`,
+                    }}
+                    style={styles.gridImage}
+                  />
+                  <Text style={styles.gridPokemonName}>{pokemon.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </View>
+        
+        <View style={styles.paginationContainer}>
+          
+          <TouchableOpacity 
+          
+            style={[styles.pageButton, currentPage === 1 && styles.pageButtonDisabled]}
+            onPress={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            <Text style={styles.pageButtonText} onPress={handlePrevious}>Previous</Text>
+            
+          </TouchableOpacity>
+          
+          <Text style={styles.pageText}>Page {currentPage} of {totalPages}</Text>
+          
+          <TouchableOpacity 
+            style={[styles.pageButton, currentPage === totalPages && styles.pageButtonDisabled]}
+            onPress={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <Text style={styles.pageButtonText} onPress={handleNext}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const handleNext = async () => {
+    await soundEffectService.playSound('buttonClick');
+    setCurrentPage(prev => Math.min(getTotalPages(generationData[selectedGeneration]), prev + 1));
+  };
+
+  const handlePrevious = async () => {
+    await soundEffectService.playSound('buttonClick');
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Your Pokédex</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Your Pokédex</Text>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={onOpenSettings}
+        >
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
       
-      {/* Starter Pokemon Section */}
+      {/* Starter Pokemon Section - Fixed */}
       <View style={styles.starterSection}>
         <Text style={styles.sectionTitle}>Your Starter Pokémon</Text>
         <View style={styles.pokemonCard}>
           <Image
             source={{
-              uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${starterPokemon.id}.png`,
+              uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${starterPokemon.id}.png`,
             }}
-            style={styles.pokemonImage}
+            style={[styles.pokemonImage, { resizeMode: 'contain' }]}
           />
           <View style={styles.pokemonInfo}>
             <Text style={styles.pokemonName}>{starterPokemon.name}</Text>
@@ -114,25 +235,38 @@ export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
         </View>
       </View>
 
-      {/* Gen 6 Pokemon Grid */}
-      <Text style={styles.sectionTitle}>Kalos Pokédex</Text>
-      <View style={styles.gridContainer}>
-        {GEN6_POKEMON.map((pokemon) => (
-          <TouchableOpacity
-            key={pokemon.id}
-            style={styles.gridItem}
-            onPress={() => handlePokemonPress(pokemon)}
-          >
-            <Image
-              source={{
-                uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`,
-              }}
-              style={styles.gridImage}
-            />
-            <Text style={styles.gridPokemonName}>{pokemon.name}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* Generation Selector */}
+      <View style={styles.generationSelector}>
+        <Text style={styles.sectionTitle}>Select Region:</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.generationScroll}
+        >
+          {Object.keys(generationData).map((gen) => (
+            <TouchableOpacity
+              key={gen}
+              style={[
+                styles.generationButton,
+                selectedGeneration === gen && styles.selectedGenerationButton
+              ]}
+              onPress={() => setSelectedGeneration(gen as GenerationKey)}
+            >
+              <Text style={[
+                styles.generationButtonText,
+                selectedGeneration === gen && styles.selectedGenerationText
+              ]}>
+                {gen} Pokédex
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
+
+      {/* Pokemon List */}
+      <ScrollView style={styles.mainScroll}>
+        {renderGeneration(generationData[selectedGeneration], `${selectedGeneration} Pokédex`)}
+      </ScrollView>
 
       {/* Pokemon Detail Modal */}
       <Modal
@@ -147,9 +281,9 @@ export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
               <>
                 <Image
                   source={{
-                    uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPokemon.id}.png`,
+                    uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${selectedPokemon.id}.png`,
                   }}
-                  style={styles.modalImage}
+                  style={[styles.modalImage, { resizeMode: 'contain' }]}
                 />
                 <Text style={styles.modalPokemonName}>{selectedPokemon.name}</Text>
                 <Text style={[
@@ -215,7 +349,6 @@ export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
                   </View>
                 </View>
 
-                {/* Add description text */}
                 <Text style={styles.pokemonDescription}>
                   {POKEMON_DESCRIPTIONS[selectedPokemon.id]}
                 </Text>
@@ -231,7 +364,7 @@ export const Pokedex: React.FC<PokedexProps> = ({ starterPokemon }) => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -239,6 +372,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginVertical: 20,
   },
   title: {
     fontSize: 32,
@@ -251,16 +391,16 @@ const styles = StyleSheet.create({
   starterSection: {
     backgroundColor: 'white',
     borderRadius: 15,
-    padding: 15,
-    marginHorizontal: 20,
-    marginBottom: 20,
+    padding: 10,
+    marginHorizontal: 10,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    marginBottom: 10,
+    paddingHorizontal: 10,
   },
   pokemonCard: {
     flexDirection: 'row',
@@ -272,6 +412,7 @@ const styles = StyleSheet.create({
   pokemonImage: {
     width: 100,
     height: 100,
+    resizeMode: 'contain',
   },
   pokemonInfo: {
     flex: 1,
@@ -290,19 +431,37 @@ const styles = StyleSheet.create({
   statsContainer: {
     marginTop: 5,
   },
-  gridContainer: {
+  scrollContainer: {
+    flex: 1,
+  },
+  mainScroll: {
+    flex: 1,
+  },
+  generationSection: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  horizontalScroll: {
+    height: 320,
+  },
+  allRowsContainer: {
+    flex: 1,
+    justifyContent: 'space-evenly',
+  },
+  rowContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    padding: 10,
+    paddingHorizontal: 5,
+    marginBottom: 5,
   },
   gridItem: {
-    width: (Dimensions.get('window').width - 60) / 3,
+    width: '31%', // Slightly less than 33.33% to account for margins
+    aspectRatio: 0.8,
     backgroundColor: 'white',
     borderRadius: 10,
-    padding: 10,
+    padding: 5,
     alignItems: 'center',
-    marginBottom: 15,
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -310,13 +469,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   gridImage: {
-    width: 80,
-    height: 80,
+    width: '80%',
+    height: '80%',
+    resizeMode: 'contain',
   },
   gridPokemonName: {
     fontSize: 12,
     fontWeight: '600',
-    marginTop: 5,
     textAlign: 'center',
   },
   modalOverlay: {
@@ -340,6 +499,7 @@ const styles = StyleSheet.create({
   modalImage: {
     width: 200,
     height: 200,
+    resizeMode: 'contain',
   },
   modalPokemonName: {
     fontSize: 24,
@@ -416,5 +576,61 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     lineHeight: 20,
     fontStyle: 'italic',
+  },
+  settingsButton: {
+    padding: 10,
+  },
+  settingsButtonText: {
+    fontSize: 24,
+  },
+  generationSelector: {
+    marginVertical: 10,
+    paddingHorizontal: 20,
+  },
+  generationScroll: {
+    flexGrow: 0,
+  },
+  generationButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginRight: 10,
+    marginVertical: 5,
+  },
+  selectedGenerationButton: {
+    backgroundColor: '#ff5252',
+  },
+  generationButtonText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+  },
+  selectedGenerationText: {
+    color: 'white',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  pageButton: {
+    backgroundColor: '#ff5252',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  pageButtonDisabled: {
+    backgroundColor: '#cccccc',
+  },
+  pageButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  pageText: {
+    fontSize: 14,
+    color: '#666',
   },
 }); 
